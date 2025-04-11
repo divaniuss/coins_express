@@ -1,38 +1,73 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const User = require('./models/User');
+const Coin = require('./models/coin');
+
  
 const app = express();
 app.use(express.json());
  
-mongoose.connect('mongodb://localhost:27017/testdb', {
+mongoose.connect('mongodb+srv://admin:adminpass@bd1.vay3lbr.mongodb.net/', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => console.log('MongoDB connected'))
   .catch(err => console.error(err));
  
 // GET: Получить пользователя по ID
-app.get('/users/:id', async (req, res) => {
+app.get('/coins/:id', async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).send('User not found');
-    res.json(user);
+    const coin = await Coin.findById(req.params.id);
+    if (!coin) return res.status(404).send('Coin not found');
+    res.json(coin);
   } catch (err) {
     res.status(500).send(err.message);
   }
 });
  
+
+app.delete('/coins/:id', async (req, res) => {
+    try {
+      const coin = await Coin.findByIdAndDelete(req.params.id);
+      if (!coin) return res.status(404).send('Coin not found');
+      else return res.status(200).send('Coin deleted');
+
+    //   res.json(coin);
+    } catch (err) {
+      res.status(500).send(err.message);
+    }
+  });
+
+app.get('/coins', async (req, res) => {
+    try {
+      const coin = await Coin.find();
+      if (!coin) return res.status(404).send('Coin not found');
+      res.json(coin);
+    } catch (err) {
+      res.status(500).send(err.message);
+    }
+  });
+
+app.post('/coins', async (req, res) => {
+    try {
+      const { name, description, denomination, year, country, material} = req.body;
+      const coin = new Coin({ name, description, denomination, year, country, material});
+      await coin.save();
+      res.status(201).json(coin);
+    } catch (err) {
+      res.status(500).send(err.message);
+    }
+  });
+
 // PUT: Обновить имя пользователя
-app.put('/users/:id', async (req, res) => {
+app.put('/coins/:id', async (req, res) => {
   try {
-    const { name } = req.body;
-    const user = await User.findByIdAndUpdate(
+    const { name, description, denomination, year, country, material} = req.body;
+    const coin = await Coin.findByIdAndUpdate(
       req.params.id,
-      { name },
+      { name, description, denomination, year, country, material},
       { new: true }
     );
-    if (!user) return res.status(404).send('User not found');
-    res.json(user);
+    if (!coin) return res.status(404).send('Coin not found');
+    res.status(404).send('Coin added');
   } catch (err) {
     res.status(500).send(err.message);
   }
