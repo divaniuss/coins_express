@@ -1,18 +1,22 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Coin = require('./models/coin');
-
+const Authroute = require('./routes/Auth');
+const verifyToken = require('./middleware/authMiddelware');
  
+const mongoUrl = require("./mongo");
+
 const app = express();
 app.use(express.json());
- 
-mongoose.connect('mongodb+srv://admin:adminpass@bd1.vay3lbr.mongodb.net/', {
+app.use('/auth', Authroute)
+
+mongoose.connect(mongoUrl, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => console.log('MongoDB connected'))
-  .catch(err => console.error(err));
- 
-// GET: Получить пользователя по ID
+.catch(err => console.error(err));
+
+
 app.get('/coins/:id', async (req, res) => {
   try {
     const coin = await Coin.findById(req.params.id);
@@ -24,13 +28,12 @@ app.get('/coins/:id', async (req, res) => {
 });
  
 
-app.delete('/coins/:id', async (req, res) => {
+app.delete('/coins/:id', verifyToken ,async (req, res) => {
     try {
       const coin = await Coin.findByIdAndDelete(req.params.id);
       if (!coin) return res.status(404).send('Coin not found');
       else return res.status(200).send('Coin deleted');
 
-    //   res.json(coin);
     } catch (err) {
       res.status(500).send(err.message);
     }
@@ -46,7 +49,7 @@ app.get('/coins', async (req, res) => {
     }
   });
 
-app.post('/coins', async (req, res) => {
+app.post('/coins', verifyToken ,async (req, res) => {
     try {
       const { name, description, denomination, year, country, material} = req.body;
       const coin = new Coin({ name, description, denomination, year, country, material});
@@ -57,8 +60,8 @@ app.post('/coins', async (req, res) => {
     }
   });
 
-// PUT: Обновить имя пользователя
-app.put('/coins/:id', async (req, res) => {
+
+app.put('/coins/:id', verifyToken, async (req, res) => {
   try {
     const { name, description, denomination, year, country, material} = req.body;
     const coin = await Coin.findByIdAndUpdate(
